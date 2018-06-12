@@ -26,6 +26,8 @@ Sample Request Body
    
  5- DELETE /api/advertiser/{advertiserId}
  
+ 6- Validate Credit Limit for an advertiser  /api/advertiser/{advertiserId}/validate
+ 
  
  #"Build APP"
  ./gradle clean build
