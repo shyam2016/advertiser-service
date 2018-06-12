@@ -125,4 +125,16 @@ public class AdvertiserControllerTest {
 
     }
 
+    @Test
+    public void postAdvertiser_returns400_whenInvalidRequestBodySent() {
+        given()
+                .standaloneSetup(controller)
+                .header(new Header("Content-Type", "application/json"))
+                .body("")
+                .when()
+                .post("/api/advertiser")
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
 }

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,10 +38,10 @@ public class AdvertiserController {
         return new ResponseEntity<Advertiser>(repository.findById(id).get(), HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "/api/advertiser", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> saveAdvertiser(@RequestBody Advertiser advertiser) throws Throwable {
-        repository.save(advertiser);
-        return new ResponseEntity<>("Advertiser has been Saved Successfully", HttpStatus.CREATED);
+    @PostMapping(value = "/api/advertiser", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Advertiser> saveAdvertiser(@RequestBody Advertiser advertiser) throws Throwable {
+        Advertiser savedAdvertiser = repository.save(advertiser);
+        return new ResponseEntity<Advertiser>(savedAdvertiser, HttpStatus.CREATED);
     }
 
     @PutMapping(value = "/api/advertiser/{id}",
@@ -62,6 +63,20 @@ public class AdvertiserController {
         return new ResponseEntity<>("Advertiser has been removed successfully !!", HttpStatus.OK);
     }
 
+    @GetMapping("/api/advertiser/{id}/validate")
+    public ResponseEntity<String> checkCreditLimit(@PathVariable("id") long advertiserId) throws Throwable {
+            Optional<Advertiser> advertiser = repository.findById(advertiserId);
+            if (!advertiser.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            if (advertiser.get().getAdvertiserCreditLimit() > 0) {
+                return new ResponseEntity<>("true", HttpStatus.OK);
+            }
+
+            return new ResponseEntity<>("false", HttpStatus.OK);
+
+
+    }
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleInvalidRequestParameterOrBody(MethodArgumentNotValidException e) {
         return new ResponseEntity<>(ErrorResponse.builder()
@@ -76,9 +91,19 @@ public class AdvertiserController {
         return new ResponseEntity<>(ErrorResponse.builder()
                 .errorCode(HttpStatus.NO_CONTENT.value())
                 .message("Resource Not found").build(),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+                HttpStatus.BAD_REQUEST);
 
     }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageConversionException e) {
+        return new ResponseEntity<>(ErrorResponse.builder()
+                .errorCode(HttpStatus.NO_CONTENT.value())
+                .message("Invalid request").build(),
+                HttpStatus.BAD_REQUEST);
+
+    }
+
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
         return new ResponseEntity<>(ErrorResponse.builder()
